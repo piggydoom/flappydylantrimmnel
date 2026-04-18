@@ -30,8 +30,18 @@ public class App extends Application {
             case SPACE:
                 
                 controller.jump();
+                
 
                 break;
+            case TAB:
+               
+                    for (Controller.Pipe pipe : controller.pipesArray){
+                        System.out.println(pipe);
+                    }
+                    break;
+            case CONTROL:
+                    controller.createNewPipe();
+                    break;
         }
     });
 
