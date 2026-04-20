@@ -10,8 +10,11 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,6 +23,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.util.Duration;
 import java.util.Random;
+import javafx.geometry.Bounds;
 
 public class Controller {
 
@@ -32,6 +36,8 @@ public class Controller {
     public Canvas canvasP;
     @FXML
     public StackPane stackPane;
+    @FXML
+    public Pane hitboxPane;
 
     Image dylanImg = new Image(getClass().getResource("/com/piggydoom/assets/dylan.png").toExternalForm());
     GraphicsContext ctx;
@@ -42,21 +48,23 @@ public class Controller {
     int pipeWidth = 60;
     double dImgW = 84.45; // dylan img width
     double dImgH = 98.2; // dylan img height
-    double threshold = 120.0;
     double v = 0; // velocity UPWARDS
     double prevDY = 0;
+    Circle hitbox = new Circle(200, 0, dImgH / 2);
 
     public class Pipe {
         public double lowerPipeHeight;
         public double topPipeHeight;
         public double currentX;
         public double lowerPipeTopY;
+        public double gap;
 
-        public Pipe(double lowerPipeHeight, double topPipeHeight, double currentX, double lowerPipeTopY) {
+        public Pipe(double lowerPipeHeight, double topPipeHeight, double currentX, double lowerPipeTopY, double gap) {
             this.lowerPipeHeight = lowerPipeHeight;
             this.topPipeHeight = topPipeHeight;
             this.currentX = currentX;
             this.lowerPipeTopY = lowerPipeTopY;
+            this.gap = gap;
         };
 
         @Override
@@ -66,6 +74,7 @@ public class Controller {
                     ", topPipeHeight=" + topPipeHeight +
                     ", currentX=" + currentX +
                     ", lowerPipeTopY=" + lowerPipeTopY +
+                    ", gap=" + gap +
                     '}';
         }
     }
@@ -76,9 +85,26 @@ public class Controller {
         v -= 0.4;
         drawDylan(0.0, prevDY -= v);
         movePipes();
+
+        for(Pipe pipe : pipesArray){
+            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
+            Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth, pipe.topPipeHeight);
+            hitboxPane.getChildren().addAll(lowerPipeHitbox, topPipeHitbox);
+            // System.out.println(lowerPipeHitbox);
+            if(hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent()) || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())){
+                System.out.println("collided(lower)");
+            };   
+            hitboxPane.getChildren().remove(lowerPipeHitbox);
+        }
+    }));
+
+    Timeline pipeTimeline = new Timeline(new KeyFrame(Duration.seconds(1.5), event -> {
+        createNewPipe();
     }));
 
     public void initialize() {
+        hitboxPane.getChildren().add(hitbox);
+        
         ctx = canvas.getGraphicsContext2D();
         ctxBG = canvasBG.getGraphicsContext2D();
         ctxP = canvasP.getGraphicsContext2D();
@@ -88,10 +114,12 @@ public class Controller {
         canvasBG.widthProperty().bind(stackPane.widthProperty());
         canvasBG.heightProperty().bind(stackPane.heightProperty());
         canvasP.widthProperty().bind(stackPane.widthProperty());
-        canvasP.heightProperty().bind(stackPane.heightProperty()); 
+        canvasP.heightProperty().bind(stackPane.heightProperty());
         javafx.application.Platform.runLater(() -> {
             sketchBackground();
             timeline.setCycleCount(Animation.INDEFINITE);
+            pipeTimeline.setCycleCount(Animation.INDEFINITE);
+            pipeTimeline.play();
             timeline.play();
         });
     }
@@ -130,6 +158,8 @@ public class Controller {
         ctx.translate(200, Ypos);
         ctx.rotate(-angle);
         ctx.drawImage(dylanImg, -dImgW / 2, dImgH / 2, dImgW, dImgH);
+        hitbox.setCenterY(Ypos + dImgH);
+            
         prevDY = Ypos;
         ctx.restore();
     }
@@ -141,16 +171,18 @@ public class Controller {
         }
 
         drawDylan(0.0, (canvas.getHeight() / 3.5));
+        hitbox.setCenterY(canvas.getHeight() / 3.5);
     }
 
     public void createNewPipe() {
-        double lowerPipeHeight = ThreadLocalRandom.current().nextDouble(30, canvasP.getHeight() - threshold - GPS);
+        double gap = ThreadLocalRandom.current().nextDouble(140, 280);
+        double lowerPipeHeight = ThreadLocalRandom.current().nextDouble(30, canvasP.getHeight() - gap - GPS);
         double lowerPipeTopY = canvasP.getHeight() - GPS - lowerPipeHeight;
-        pipesArray.add(new Pipe(lowerPipeHeight, 10.0, canvasP.getWidth(), lowerPipeTopY));
+        pipesArray.add(new Pipe(lowerPipeHeight, 10.0, canvasP.getWidth(), lowerPipeTopY, gap));
         ctxP.setFill(Color.LIMEGREEN);
 
         ctxP.fillRect(canvasP.getWidth(), lowerPipeTopY, pipeWidth, lowerPipeHeight);
-        ctxP.fillRect(canvasP.getWidth(), 0, pipeWidth, lowerPipeTopY - threshold);
+        ctxP.fillRect(canvasP.getWidth(), 0, pipeWidth, lowerPipeTopY - gap);
     }
 
     public void jump() {
@@ -162,12 +194,16 @@ public class Controller {
 
     public void movePipes() {
         for (Pipe pipe : pipesArray) {
+            if(pipe.currentX > -pipeWidth){
             ctxP.clearRect(pipe.currentX, 0, pipeWidth, canvasP.getHeight() - GPS);
 
             ctxP.setFill(Color.LIMEGREEN);
             pipe.currentX -= 10;
             ctxP.fillRect(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
-            ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - threshold);
+            ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
+            } else{
+                pipesArray.remove(pipe);
+            }
         }
     }
 }

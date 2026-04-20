@@ -35,9 +35,10 @@ public class App extends Application {
                 break;
             case TAB:
                
-                    for (Controller.Pipe pipe : controller.pipesArray){
-                        System.out.println(pipe);
-                    }
+                    // for (Controller.Pipe pipe : controller.pipesArray){
+                    //     System.out.println(pipe);
+                    // }
+                    System.out.println(controller.pipesArray.size());
                     break;
             case CONTROL:
                     controller.createNewPipe();
@@ -52,6 +53,7 @@ public class App extends Application {
 
     public static void main(String[] args) {
         launch();
+        
     }
 
 }
