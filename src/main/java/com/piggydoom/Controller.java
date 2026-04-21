@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
@@ -40,6 +41,16 @@ public class Controller {
     public Pane hitboxPane;
 
     Image dylanImg = new Image(getClass().getResource("/com/piggydoom/assets/dylan.png").toExternalForm());
+    Image n0 = new Image(getClass().getResource("/com/piggydoom/assets/0.png").toExternalForm());
+    Image n1 = new Image(getClass().getResource("/com/piggydoom/assets/1.png").toExternalForm());
+    Image n2 = new Image(getClass().getResource("/com/piggydoom/assets/2.png").toExternalForm());
+    Image n3 = new Image(getClass().getResource("/com/piggydoom/assets/3.png").toExternalForm());
+    Image n4 = new Image(getClass().getResource("/com/piggydoom/assets/4.png").toExternalForm());
+    Image n5 = new Image(getClass().getResource("/com/piggydoom/assets/5.png").toExternalForm());
+    Image n6 = new Image(getClass().getResource("/com/piggydoom/assets/6.png").toExternalForm());
+    Image n7 = new Image(getClass().getResource("/com/piggydoom/assets/7.png").toExternalForm());
+    Image n8 = new Image(getClass().getResource("/com/piggydoom/assets/8.png").toExternalForm());
+    Image n9 = new Image(getClass().getResource("/com/piggydoom/assets/9.png").toExternalForm());
     GraphicsContext ctx;
     GraphicsContext ctxBG;
     GraphicsContext ctxP;
@@ -50,7 +61,10 @@ public class Controller {
     double dImgH = 98.2; // dylan img height
     double v = 0; // velocity UPWARDS
     double prevDY = 0;
+    int score = 0;
+    String scoreString;
     Circle hitbox = new Circle(200, 0, dImgH / 2);
+    ImageView dylan = new ImageView(dylanImg);
 
     public class Pipe {
         public double lowerPipeHeight;
@@ -80,6 +94,7 @@ public class Controller {
     }
 
     ObservableList<Pipe> pipesArray = FXCollections.observableArrayList();
+    ObservableList<Image> numberSpriteArray = FXCollections.observableArrayList(n0, n1, n2, n3, n4, n5, n6, n7, n8, n9);
 
     Timeline timeline = new Timeline(new KeyFrame(Duration.millis(20), event -> {
         v -= 0.4;
@@ -92,7 +107,7 @@ public class Controller {
             hitboxPane.getChildren().addAll(lowerPipeHitbox, topPipeHitbox);
             // System.out.println(lowerPipeHitbox);
             if(hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent()) || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())){
-                System.out.println("collided(lower)");
+                // System.out.println("collided");
             };   
             hitboxPane.getChildren().remove(lowerPipeHitbox);
         }
@@ -153,14 +168,12 @@ public class Controller {
     }
 
     public void drawDylan(Double angle, Double Ypos) {
-        ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        ctx.clearRect(200 - dImgW / 2, 0, dImgW, canvas.getHeight());
         ctx.save();
         ctx.translate(200, Ypos);
         ctx.rotate(-angle);
         ctx.drawImage(dylanImg, -dImgW / 2, dImgH / 2, dImgW, dImgH);
         hitbox.setCenterY(Ypos + dImgH);
-            
-        prevDY = Ypos;
         ctx.restore();
     }
 
@@ -171,7 +184,10 @@ public class Controller {
         }
 
         drawDylan(0.0, (canvas.getHeight() / 3.5));
-        hitbox.setCenterY(canvas.getHeight() / 3.5);
+        
+        // dylan.setPreserveRatio(true);
+        // dylan.setFitHeight(80);
+        // hitbox.setCenterY(canvas.getHeight() / 3.5);
     }
 
     public void createNewPipe() {
@@ -204,6 +220,25 @@ public class Controller {
             } else{
                 pipesArray.remove(pipe);
             }
+            if(pipe.currentX == 200 - pipeWidth){
+                score += 1;
+                scoreString = Integer.toString(score);
+                updateScore();
+            }
+        }
+    }
+
+    public void updateScore(){
+        ctx.clearRect(0, 0, 300, 600);
+        double drawNumX = 5;
+        for(int i = scoreString.length(); i > 0; i--){
+            // System.out.println(scoreString);
+            
+            int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i - 1)));
+            System.out.println(scoreString.charAt(i - 1));
+            ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, 36.0);
+            // drawNumX += numberSpriteArray.get(itterationIndex).getWidth();
+            drawNumX += 20;
         }
     }
 }
