@@ -61,10 +61,12 @@ public class Controller {
     double dImgH = 98.2; // dylan img height
     double v = 0; // velocity UPWARDS
     double prevDY = 0;
-    int score = 0;
+    double scoreMargin = 3.5;
+    int score = -1;
     String scoreString;
     Circle hitbox = new Circle(200, 0, dImgH / 2);
     ImageView dylan = new ImageView(dylanImg);
+    boolean gameStarted = false;
 
     public class Pipe {
         public double lowerPipeHeight;
@@ -101,14 +103,17 @@ public class Controller {
         drawDylan(0.0, prevDY -= v);
         movePipes();
 
-        for(Pipe pipe : pipesArray){
-            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
+        for (Pipe pipe : pipesArray) {
+            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth,
+                    pipe.lowerPipeHeight);
             Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth, pipe.topPipeHeight);
             hitboxPane.getChildren().addAll(lowerPipeHitbox, topPipeHitbox);
             // System.out.println(lowerPipeHitbox);
-            if(hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent()) || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())){
+            if (hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent())
+                    || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())) {
                 // System.out.println("collided");
-            };   
+            }
+            ;
             hitboxPane.getChildren().remove(lowerPipeHitbox);
         }
     }));
@@ -119,7 +124,7 @@ public class Controller {
 
     public void initialize() {
         hitboxPane.getChildren().add(hitbox);
-        
+
         ctx = canvas.getGraphicsContext2D();
         ctxBG = canvasBG.getGraphicsContext2D();
         ctxP = canvasP.getGraphicsContext2D();
@@ -132,10 +137,10 @@ public class Controller {
         canvasP.heightProperty().bind(stackPane.heightProperty());
         javafx.application.Platform.runLater(() -> {
             sketchBackground();
+            
             timeline.setCycleCount(Animation.INDEFINITE);
             pipeTimeline.setCycleCount(Animation.INDEFINITE);
-            pipeTimeline.play();
-            timeline.play();
+            
         });
     }
 
@@ -184,7 +189,7 @@ public class Controller {
         }
 
         drawDylan(0.0, (canvas.getHeight() / 3.5));
-        
+        updateScore();
         // dylan.setPreserveRatio(true);
         // dylan.setFitHeight(80);
         // hitbox.setCenterY(canvas.getHeight() / 3.5);
@@ -210,35 +215,36 @@ public class Controller {
 
     public void movePipes() {
         for (Pipe pipe : pipesArray) {
-            if(pipe.currentX > -pipeWidth){
-            ctxP.clearRect(pipe.currentX, 0, pipeWidth, canvasP.getHeight() - GPS);
+            if (pipe.currentX > -pipeWidth) {
+                ctxP.clearRect(pipe.currentX, 0, pipeWidth, canvasP.getHeight() - GPS);
 
-            ctxP.setFill(Color.LIMEGREEN);
-            pipe.currentX -= 10;
-            ctxP.fillRect(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
-            ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
-            } else{
-                pipesArray.remove(pipe);
-            }
-            if(pipe.currentX == 200 - pipeWidth){
-                score += 1;
-                scoreString = Integer.toString(score);
+                ctxP.setFill(Color.LIMEGREEN);
+                pipe.currentX -= 10;
+                ctxP.fillRect(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
+                ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
+            } 
+
+            if (pipe.currentX == 200 - pipeWidth) {
                 updateScore();
             }
+
         }
+        pipesArray.removeIf(pipe -> pipe.currentX <= -pipeWidth);
     }
 
-    public void updateScore(){
-        ctx.clearRect(0, 0, 300, 600);
-        double drawNumX = 5;
-        for(int i = scoreString.length(); i > 0; i--){
+    public void updateScore() {
+        score += 1;
+        scoreString = Integer.toString(score);
+        ctx.clearRect(0, 0, (scoreString.length() * 24) + scoreString.length() * scoreMargin, 41);
+        double drawNumX = scoreMargin;
+
+        for (int i = 0; i < scoreString.length(); i++) {
             // System.out.println(scoreString);
-            
-            int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i - 1)));
-            System.out.println(scoreString.charAt(i - 1));
-            ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, 36.0);
-            // drawNumX += numberSpriteArray.get(itterationIndex).getWidth();
-            drawNumX += 20;
+
+            int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i)));
+            System.out.println(scoreString);
+            ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, scoreMargin);
+            drawNumX += numberSpriteArray.get(itterationIndex).getWidth() + scoreMargin;
         }
     }
 }

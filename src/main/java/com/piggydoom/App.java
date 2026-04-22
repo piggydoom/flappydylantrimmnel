@@ -17,43 +17,50 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-    FXMLLoader loader = new FXMLLoader(App.class.getResource("/com/piggydoom/index.fxml"));
-    Parent root = loader.load();
+        FXMLLoader loader = new FXMLLoader(App.class.getResource("/com/piggydoom/index.fxml"));
+        Parent root = loader.load();
 
-    Controller controller = loader.getController();
+        Controller controller = loader.getController();
 
         stage.setResizable(false);
         scene = new Scene(root, 800, 550);
 
         scene.setOnKeyPressed(event -> {
-        switch (event.getCode()) {
-            case SPACE:
-                
-                controller.jump();
-                
 
-                break;
-            case TAB:
-               
-                    // for (Controller.Pipe pipe : controller.pipesArray){
-                    //     System.out.println(pipe);
-                    // }
-                    System.out.println(controller.pipesArray.size());
-                    break;
-            case CONTROL:
-                    controller.createNewPipe();
-                    break;
-        }
-    });
+            if (controller.gameStarted == false) {
+                System.out.println("gameStart");
+                controller.gameStarted = true;
+                controller.pipeTimeline.play();
+                controller.timeline.play();
+            } else {
+
+                switch (event.getCode()) {
+                    case SPACE:
+
+                        controller.jump();
+
+                        break;
+                    case TAB:
+
+                        // for (Controller.Pipe pipe : controller.pipesArray){
+                        // System.out.println(pipe);
+                        // }
+                        System.out.println(controller.pipesArray.size());
+                        break;
+                    case CONTROL:
+                        controller.createNewPipe();
+                        break;
+                }
+            }
+        });
 
         stage.setScene(scene);
         stage.show();
     }
 
-
     public static void main(String[] args) {
         launch();
-        
+
     }
 
 }
