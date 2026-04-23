@@ -1,0 +1,6 @@
+#scoreLabel{
+    -fx-font-family: "Flappy Bird Font";
+    -fx-font-size: 50;
+    -fx-fill: lightblue;
+    -fx-stroke: red;
+}

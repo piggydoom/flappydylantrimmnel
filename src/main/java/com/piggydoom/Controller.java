@@ -5,17 +5,22 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -39,6 +44,8 @@ public class Controller {
     public StackPane stackPane;
     @FXML
     public Pane hitboxPane;
+    @FXML
+    public Label scoreLabel;
 
     Image dylanImg = new Image(getClass().getResource("/com/piggydoom/assets/dylan.png").toExternalForm());
     Image n0 = new Image(getClass().getResource("/com/piggydoom/assets/0.png").toExternalForm());
@@ -67,6 +74,7 @@ public class Controller {
     Circle hitbox = new Circle(200, 0, dImgH / 2);
     ImageView dylan = new ImageView(dylanImg);
     boolean gameStarted = false;
+    int tickrate = 20;
 
     public class Pipe {
         public double lowerPipeHeight;
@@ -118,7 +126,7 @@ public class Controller {
         }
     }));
 
-    Timeline pipeTimeline = new Timeline(new KeyFrame(Duration.seconds(1.5), event -> {
+    Timeline pipeTimeline = new Timeline(new KeyFrame(Duration.millis(tickrate * 63), event -> {
         createNewPipe();
     }));
 
@@ -137,10 +145,10 @@ public class Controller {
         canvasP.heightProperty().bind(stackPane.heightProperty());
         javafx.application.Platform.runLater(() -> {
             sketchBackground();
-            
+
             timeline.setCycleCount(Animation.INDEFINITE);
             pipeTimeline.setCycleCount(Animation.INDEFINITE);
-            
+
         });
     }
 
@@ -222,7 +230,7 @@ public class Controller {
                 pipe.currentX -= 10;
                 ctxP.fillRect(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
                 ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
-            } 
+            }
 
             if (pipe.currentX == 200 - pipeWidth) {
                 updateScore();
@@ -235,16 +243,36 @@ public class Controller {
     public void updateScore() {
         score += 1;
         scoreString = Integer.toString(score);
-        ctx.clearRect(0, 0, (scoreString.length() * 24) + scoreString.length() * scoreMargin, 41);
-        double drawNumX = scoreMargin;
+        // ctx.clearRect(0, 0, (scoreString.length() * 24) + scoreString.length() * scoreMargin, 41);
+        // double drawNumX = scoreMargin;
 
-        for (int i = 0; i < scoreString.length(); i++) {
-            // System.out.println(scoreString);
+        // for (int i = 0; i < scoreString.length(); i++) {
+        //     // System.out.println(scoreString);
 
-            int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i)));
-            System.out.println(scoreString);
-            ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, scoreMargin);
-            drawNumX += numberSpriteArray.get(itterationIndex).getWidth() + scoreMargin;
-        }
+        //     int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i)));
+        //     System.out.println(scoreString);
+        //     ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, scoreMargin);
+        //     drawNumX += numberSpriteArray.get(itterationIndex).getWidth() + scoreMargin;
+        // }
+        scoreLabel.setText(scoreString);
     }
+
+
+    // Source - https://stackoverflow.com/a/20979664
+    // Posted by Stevantti
+    // Retrieved 2026-04-22, License - CC BY-SA 3.0
+
+    public static void showPopup() {
+        Stage newStage = new Stage();
+        VBox comp = new VBox();
+        TextField nameField = new TextField("Name");
+        TextField phoneNumber = new TextField("Phone Number");
+        comp.getChildren().add(nameField);
+        comp.getChildren().add(phoneNumber);
+
+        Scene stageScene = new Scene(comp, 300, 300);
+        newStage.setScene(stageScene);
+        newStage.show();
+    }
+
 }

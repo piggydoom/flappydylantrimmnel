@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        Font.loadFont(getClass().getResource("/com/piggydoom/assets/flappy-bird-font.otf").toExternalForm(), 10);
         FXMLLoader loader = new FXMLLoader(App.class.getResource("/com/piggydoom/index.fxml"));
         Parent root = loader.load();
 
@@ -45,7 +47,8 @@ public class App extends Application {
                         // for (Controller.Pipe pipe : controller.pipesArray){
                         // System.out.println(pipe);
                         // }
-                        System.out.println(controller.pipesArray.size());
+                        // System.out.println(controller.pipesArray.size());
+                        controller.showPopup();
                         break;
                     case CONTROL:
                         controller.createNewPipe();
