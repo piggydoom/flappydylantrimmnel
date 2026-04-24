@@ -19,9 +19,9 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         Font.loadFont(getClass().getResource("/com/piggydoom/assets/flappy-bird-font.otf").toExternalForm(), 10);
+        Font.loadFont(getClass().getResource("/com/piggydoom/assets/flappy-font.ttf").toExternalForm(), 10);
         FXMLLoader loader = new FXMLLoader(App.class.getResource("/com/piggydoom/index.fxml"));
         Parent root = loader.load();
-
         Controller controller = loader.getController();
 
         stage.setResizable(false);
@@ -30,10 +30,23 @@ public class App extends Application {
         scene.setOnKeyPressed(event -> {
 
             if (controller.gameStarted == false) {
-                System.out.println("gameStart");
+                controller.score = -1;
+
+                if(controller.sessionBegan){
+                controller.sketchBackground();
+                }
+                
                 controller.gameStarted = true;
+                controller.gameOverCard.setVisible(false);
                 controller.pipeTimeline.play();
                 controller.timeline.play();
+                controller.jump();
+                controller.gameOverFlag = false;
+
+                if (!controller.sessionBegan) {
+                    controller.sessionBegan = true;
+                }
+
             } else {
 
                 switch (event.getCode()) {
@@ -48,10 +61,12 @@ public class App extends Application {
                         // System.out.println(pipe);
                         // }
                         // System.out.println(controller.pipesArray.size());
-                        controller.showPopup();
+                        // controller.showPopup();
+                        controller.gameOver();
                         break;
                     case CONTROL:
-                        controller.createNewPipe();
+                        // controller.createNewPipe(controller.canvasP.getWidth());
+                        // controller.moveBackground();
                         break;
                 }
             }

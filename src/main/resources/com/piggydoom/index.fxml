@@ -16,12 +16,14 @@
       <Canvas fx:id="canvasBG" height="200.0" width="200.0" />
       <Canvas fx:id="canvasP" height="200.0" width="200.0" />
       <Canvas fx:id="canvas" height="200.0" layoutX="210.0" layoutY="110.0" width="200.0" />
-
-      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="150.0" prefWidth="310.0" visible="false">
+      
+      <VBox fx:id="gameOverCard" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="150.0" prefWidth="310.0" stylesheets="@styles.css" visible="false">
          <children>
-            <Label alignment="CENTER" contentDisplay="TOP" text="Label" />
+            <Label alignment="CENTER" contentDisplay="TOP" styleClass="gameOverCardDialogue" text="GAME OVER" />
+            <Label fx:id="gameOverCardScore" />
+            <Label fx:id="gameOverCardDialogueBottom" alignment="CENTER" contentDisplay="TOP" layoutX="83.0" layoutY="10.0" styleClass="gameOverCardDialogue" text="PRESS SPACE TO CONTINUE" />
             <Region maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="21.0" prefWidth="318.0" VBox.vgrow="ALWAYS" />
-            <ProgressBar prefWidth="200.0" />
+            <ProgressBar fx:id="replayProBar" prefWidth="200.0" progress="0.0" />
          </children>
       </VBox>
       

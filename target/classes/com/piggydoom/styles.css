@@ -1,6 +1,20 @@
+.root{
+        -fx-font-family: "Flappy Bird Font";
+}
+
 #scoreLabel{
-    -fx-font-family: "Flappy Bird Font";
     -fx-font-size: 50;
-    -fx-fill: lightblue;
-    -fx-stroke: red;
+}
+
+.gameOverCardDialogue{
+        -fx-font-family: "04b_19"; 
+        -fx-font-size: 30;
+}
+
+#gameOverCardScore{
+        -fx-font-size: 50;
+}
+
+#gameOverCardDialogueBottom{
+        -fx-font-size: 12;
 }

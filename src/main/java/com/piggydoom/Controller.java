@@ -5,15 +5,17 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -28,8 +30,6 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.util.Duration;
-import java.util.Random;
-import javafx.geometry.Bounds;
 
 public class Controller {
 
@@ -46,18 +46,14 @@ public class Controller {
     public Pane hitboxPane;
     @FXML
     public Label scoreLabel;
+    @FXML
+    public VBox gameOverCard;
+    @FXML
+    public ProgressBar replayProBar;
+    @FXML
+    public Label gameOverCardScore;
 
     Image dylanImg = new Image(getClass().getResource("/com/piggydoom/assets/dylan.png").toExternalForm());
-    Image n0 = new Image(getClass().getResource("/com/piggydoom/assets/0.png").toExternalForm());
-    Image n1 = new Image(getClass().getResource("/com/piggydoom/assets/1.png").toExternalForm());
-    Image n2 = new Image(getClass().getResource("/com/piggydoom/assets/2.png").toExternalForm());
-    Image n3 = new Image(getClass().getResource("/com/piggydoom/assets/3.png").toExternalForm());
-    Image n4 = new Image(getClass().getResource("/com/piggydoom/assets/4.png").toExternalForm());
-    Image n5 = new Image(getClass().getResource("/com/piggydoom/assets/5.png").toExternalForm());
-    Image n6 = new Image(getClass().getResource("/com/piggydoom/assets/6.png").toExternalForm());
-    Image n7 = new Image(getClass().getResource("/com/piggydoom/assets/7.png").toExternalForm());
-    Image n8 = new Image(getClass().getResource("/com/piggydoom/assets/8.png").toExternalForm());
-    Image n9 = new Image(getClass().getResource("/com/piggydoom/assets/9.png").toExternalForm());
     GraphicsContext ctx;
     GraphicsContext ctxBG;
     GraphicsContext ctxP;
@@ -71,10 +67,13 @@ public class Controller {
     double scoreMargin = 3.5;
     int score = -1;
     String scoreString;
-    Circle hitbox = new Circle(200, 0, dImgH / 2);
+    Circle hitbox = new Circle(200, 0, dImgH / 2.3);
     ImageView dylan = new ImageView(dylanImg);
     boolean gameStarted = false;
     int tickrate = 20;
+    double replayTimerMs = 1200;
+    boolean gameOverFlag = true;
+    boolean sessionBegan = false;
 
     public class Pipe {
         public double lowerPipeHeight;
@@ -102,32 +101,39 @@ public class Controller {
                     '}';
         }
     }
+    
 
     ObservableList<Pipe> pipesArray = FXCollections.observableArrayList();
-    ObservableList<Image> numberSpriteArray = FXCollections.observableArrayList(n0, n1, n2, n3, n4, n5, n6, n7, n8, n9);
 
-    Timeline timeline = new Timeline(new KeyFrame(Duration.millis(20), event -> {
-        v -= 0.4;
+    Timeline timeline = new Timeline(new KeyFrame(Duration.millis(tickrate), event -> {
+        v -= 0.6;
         drawDylan(0.0, prevDY -= v);
         movePipes();
+        moveBackground();
+
+         if(gameOverFlag){
+                gameOver();
+            }
 
         for (Pipe pipe : pipesArray) {
-            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth,
-                    pipe.lowerPipeHeight);
-            Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth, pipe.topPipeHeight);
-            hitboxPane.getChildren().addAll(lowerPipeHitbox, topPipeHitbox);
-            // System.out.println(lowerPipeHitbox);
+            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
+            Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth , pipe.topPipeHeight);
+            hitboxPane.getChildren().add(lowerPipeHitbox);
+            hitboxPane.getChildren().add(topPipeHitbox);
             if (hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent())
                     || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())) {
-                // System.out.println("collided");
+                gameOverFlag = true;
+
             }
             ;
+            hitboxPane.getChildren().remove(topPipeHitbox);
             hitboxPane.getChildren().remove(lowerPipeHitbox);
+           
         }
     }));
 
     Timeline pipeTimeline = new Timeline(new KeyFrame(Duration.millis(tickrate * 63), event -> {
-        createNewPipe();
+        createNewPipe(canvasP.getWidth());
     }));
 
     public void initialize() {
@@ -145,10 +151,9 @@ public class Controller {
         canvasP.heightProperty().bind(stackPane.heightProperty());
         javafx.application.Platform.runLater(() -> {
             sketchBackground();
-
             timeline.setCycleCount(Animation.INDEFINITE);
             pipeTimeline.setCycleCount(Animation.INDEFINITE);
-
+            
         });
     }
 
@@ -164,7 +169,7 @@ public class Controller {
     public void drawGroundPixel(Integer drawX) {
         ctxBG.setFill(Color.hsb(30, 0.77, 0.09));
         ctxBG.fillRect(drawX, canvasBG.getHeight() - GPS, GPS, GPS);
-
+        System.out.println("test");
         for (int groundTexture = rand.nextInt(6); groundTexture <= 6; groundTexture++) {
 
             int textureSize = rand.nextInt((GPS / 5 - 2) + 1) + 2;
@@ -191,34 +196,34 @@ public class Controller {
     }
 
     public void sketchBackground() {
+        ctxP.clearRect(0, 0, canvasP.getWidth(), canvasP.getHeight());
         drawSky(0, canvasBG.getWidth());
         for (int i = 0; i < Math.ceil(canvasBG.getWidth() / GPS) * GPS; i += GPS) {
             drawGroundPixel(i);
         }
-
-        drawDylan(0.0, (canvas.getHeight() / 3.5));
+        createNewPipe(600);
+        prevDY = (canvas.getHeight() / 3.5);
+        drawDylan(0.0, prevDY);
         updateScore();
-        // dylan.setPreserveRatio(true);
-        // dylan.setFitHeight(80);
-        // hitbox.setCenterY(canvas.getHeight() / 3.5);
     }
 
-    public void createNewPipe() {
+    public void createNewPipe(double x) {
         double gap = ThreadLocalRandom.current().nextDouble(140, 280);
         double lowerPipeHeight = ThreadLocalRandom.current().nextDouble(30, canvasP.getHeight() - gap - GPS);
         double lowerPipeTopY = canvasP.getHeight() - GPS - lowerPipeHeight;
-        pipesArray.add(new Pipe(lowerPipeHeight, 10.0, canvasP.getWidth(), lowerPipeTopY, gap));
+        double topPipeHeight = lowerPipeTopY - gap;
+        pipesArray.add(new Pipe(lowerPipeHeight, topPipeHeight, x, lowerPipeTopY, gap));
         ctxP.setFill(Color.LIMEGREEN);
 
-        ctxP.fillRect(canvasP.getWidth(), lowerPipeTopY, pipeWidth, lowerPipeHeight);
-        ctxP.fillRect(canvasP.getWidth(), 0, pipeWidth, lowerPipeTopY - gap);
+        ctxP.fillRect(x, lowerPipeTopY, pipeWidth, lowerPipeHeight);
+        ctxP.fillRect(x, 0, pipeWidth, topPipeHeight);
     }
 
     public void jump() {
         if (v <= 0) {
             v = 3;
         }
-        v += 3;
+        v += 5;
     }
 
     public void movePipes() {
@@ -240,39 +245,37 @@ public class Controller {
         pipesArray.removeIf(pipe -> pipe.currentX <= -pipeWidth);
     }
 
+    public void moveBackground(){
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+        Rectangle2D viewport = new Rectangle2D(0, canvasBG.getHeight() - GPS, canvasBG.getWidth() + GPS, GPS);
+        params.setViewport(viewport);
+        WritableImage selectedImage = canvasBG.snapshot(params, null);
+
+        
+        ctxBG.drawImage(selectedImage, -10, canvasBG.getHeight() - GPS);
+        drawGroundPixel((int) canvasBG.getWidth() - 10);
+    }
+
     public void updateScore() {
         score += 1;
         scoreString = Integer.toString(score);
-        // ctx.clearRect(0, 0, (scoreString.length() * 24) + scoreString.length() * scoreMargin, 41);
-        // double drawNumX = scoreMargin;
-
-        // for (int i = 0; i < scoreString.length(); i++) {
-        //     // System.out.println(scoreString);
-
-        //     int itterationIndex = Integer.parseInt(String.valueOf(scoreString.charAt(i)));
-        //     System.out.println(scoreString);
-        //     ctx.drawImage(numberSpriteArray.get(itterationIndex), drawNumX, scoreMargin);
-        //     drawNumX += numberSpriteArray.get(itterationIndex).getWidth() + scoreMargin;
-        // }
         scoreLabel.setText(scoreString);
     }
 
+    public void gameOver() {
+        gameStarted = false;
+        timeline.stop();
+        pipeTimeline.stop();
+        pipesArray.clear();
+        gameOverCard.setVisible(true);
+        gameOverCardScore.setText(scoreString);
 
-    // Source - https://stackoverflow.com/a/20979664
-    // Posted by Stevantti
-    // Retrieved 2026-04-22, License - CC BY-SA 3.0
+        KeyValue keyValue = new KeyValue(replayProBar.progressProperty(), 1.0);
+        KeyFrame keyFrame = new KeyFrame(Duration.millis(replayTimerMs), keyValue);
+        Timeline probarTimeline = new Timeline(keyFrame);
+        probarTimeline.setCycleCount(1);
+        probarTimeline.play();
 
-    public static void showPopup() {
-        Stage newStage = new Stage();
-        VBox comp = new VBox();
-        TextField nameField = new TextField("Name");
-        TextField phoneNumber = new TextField("Phone Number");
-        comp.getChildren().add(nameField);
-        comp.getChildren().add(phoneNumber);
-
-        Scene stageScene = new Scene(comp, 300, 300);
-        newStage.setScene(stageScene);
-        newStage.show();
     }
-
 }
