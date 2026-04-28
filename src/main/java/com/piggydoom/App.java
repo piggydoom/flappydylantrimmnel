@@ -29,13 +29,13 @@ public class App extends Application {
 
         scene.setOnKeyPressed(event -> {
 
-            if (controller.gameStarted == false) {
+            if (controller.gameStarted == false && !controller.cooldown) {
                 controller.score = -1;
 
-                if(controller.sessionBegan){
-                controller.sketchBackground();
+                if (controller.sessionBegan) {
+                    controller.sketchBackground();
                 }
-                
+
                 controller.gameStarted = true;
                 controller.gameOverCard.setVisible(false);
                 controller.pipeTimeline.play();
@@ -52,8 +52,9 @@ public class App extends Application {
                 switch (event.getCode()) {
                     case SPACE:
 
-                        controller.jump();
-
+                        if (!controller.cooldown) {
+                            controller.jump();
+                        }
                         break;
                     case TAB:
 

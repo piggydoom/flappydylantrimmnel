@@ -74,6 +74,8 @@ public class Controller {
     double replayTimerMs = 1200;
     boolean gameOverFlag = true;
     boolean sessionBegan = false;
+    double pipePixelSize = pipeWidth / 8;
+    boolean cooldown = false;
 
     public class Pipe {
         public double lowerPipeHeight;
@@ -101,7 +103,6 @@ public class Controller {
                     '}';
         }
     }
-    
 
     ObservableList<Pipe> pipesArray = FXCollections.observableArrayList();
 
@@ -111,24 +112,26 @@ public class Controller {
         movePipes();
         moveBackground();
 
-         if(gameOverFlag){
-                gameOver();
-            }
+        if (gameOverFlag) {
+            gameOver();
+        }
 
         for (Pipe pipe : pipesArray) {
-            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
-            Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth , pipe.topPipeHeight);
+            Rectangle lowerPipeHitbox = new Rectangle(pipe.currentX, pipe.lowerPipeTopY, pipeWidth,
+                    pipe.lowerPipeHeight);
+            Rectangle topPipeHitbox = new Rectangle(pipe.currentX, 0, pipeWidth, pipe.topPipeHeight);
             hitboxPane.getChildren().add(lowerPipeHitbox);
             hitboxPane.getChildren().add(topPipeHitbox);
             if (hitbox.getBoundsInParent().intersects(lowerPipeHitbox.getBoundsInParent())
-                    || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())) {
+                    || hitbox.getBoundsInParent().intersects(topPipeHitbox.getBoundsInParent())
+                    || prevDY > canvas.getHeight() || prevDY < -dImgH - GPS) {
                 gameOverFlag = true;
 
             }
             ;
             hitboxPane.getChildren().remove(topPipeHitbox);
             hitboxPane.getChildren().remove(lowerPipeHitbox);
-           
+
         }
     }));
 
@@ -153,7 +156,7 @@ public class Controller {
             sketchBackground();
             timeline.setCycleCount(Animation.INDEFINITE);
             pipeTimeline.setCycleCount(Animation.INDEFINITE);
-            
+
         });
     }
 
@@ -167,9 +170,8 @@ public class Controller {
     }
 
     public void drawGroundPixel(Integer drawX) {
-        ctxBG.setFill(Color.hsb(30, 0.77, 0.09));
+        ctxBG.setFill(Color.hsb(30, 0.77, 0.25));
         ctxBG.fillRect(drawX, canvasBG.getHeight() - GPS, GPS, GPS);
-        System.out.println("test");
         for (int groundTexture = rand.nextInt(6); groundTexture <= 6; groundTexture++) {
 
             int textureSize = rand.nextInt((GPS / 5 - 2) + 1) + 2;
@@ -207,6 +209,21 @@ public class Controller {
         updateScore();
     }
 
+    public void drawPipe(double x, double y, double w, double h) {
+        double pipeBri = 0.6;
+        ctxP.setFill(Color.BLACK);
+        ctxP.fillRect(x, y, pipePixelSize, h);
+        for (double i = x + pipePixelSize; i < x + w - pipePixelSize; i += pipePixelSize) {
+            ctxP.setFill(Color.hsb(120.0, 1, pipeBri));
+            ctxP.fillRect(i, y, pipePixelSize, h);
+            pipeBri += 0.05;
+        }
+        ctxP.setFill(Color.BLACK);
+        ctxP.fillRect(x + pipeWidth - pipePixelSize, y, pipePixelSize, h);
+
+        // ctxP.fillRect(x, y, w, h);
+    }
+
     public void createNewPipe(double x) {
         double gap = ThreadLocalRandom.current().nextDouble(140, 280);
         double lowerPipeHeight = ThreadLocalRandom.current().nextDouble(30, canvasP.getHeight() - gap - GPS);
@@ -215,8 +232,8 @@ public class Controller {
         pipesArray.add(new Pipe(lowerPipeHeight, topPipeHeight, x, lowerPipeTopY, gap));
         ctxP.setFill(Color.LIMEGREEN);
 
-        ctxP.fillRect(x, lowerPipeTopY, pipeWidth, lowerPipeHeight);
-        ctxP.fillRect(x, 0, pipeWidth, topPipeHeight);
+        drawPipe(x, lowerPipeTopY, pipeWidth, lowerPipeHeight);
+        drawPipe(x, 0, pipeWidth, topPipeHeight);
     }
 
     public void jump() {
@@ -233,8 +250,8 @@ public class Controller {
 
                 ctxP.setFill(Color.LIMEGREEN);
                 pipe.currentX -= 10;
-                ctxP.fillRect(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
-                ctxP.fillRect(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
+                drawPipe(pipe.currentX, pipe.lowerPipeTopY, pipeWidth, pipe.lowerPipeHeight);
+                drawPipe(pipe.currentX, 0, pipeWidth, pipe.lowerPipeTopY - pipe.gap);
             }
 
             if (pipe.currentX == 200 - pipeWidth) {
@@ -245,14 +262,13 @@ public class Controller {
         pipesArray.removeIf(pipe -> pipe.currentX <= -pipeWidth);
     }
 
-    public void moveBackground(){
+    public void moveBackground() {
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
         Rectangle2D viewport = new Rectangle2D(0, canvasBG.getHeight() - GPS, canvasBG.getWidth() + GPS, GPS);
         params.setViewport(viewport);
         WritableImage selectedImage = canvasBG.snapshot(params, null);
 
-        
         ctxBG.drawImage(selectedImage, -10, canvasBG.getHeight() - GPS);
         drawGroundPixel((int) canvasBG.getWidth() - 10);
     }
@@ -264,18 +280,24 @@ public class Controller {
     }
 
     public void gameOver() {
+        cooldown = true;
         gameStarted = false;
         timeline.stop();
         pipeTimeline.stop();
         pipesArray.clear();
         gameOverCard.setVisible(true);
         gameOverCardScore.setText(scoreString);
+        v = 0;
+        replayProBar.setProgress(0);
 
         KeyValue keyValue = new KeyValue(replayProBar.progressProperty(), 1.0);
         KeyFrame keyFrame = new KeyFrame(Duration.millis(replayTimerMs), keyValue);
         Timeline probarTimeline = new Timeline(keyFrame);
         probarTimeline.setCycleCount(1);
         probarTimeline.play();
+        probarTimeline.setOnFinished(event -> {
+            cooldown = false;
+        });
 
     }
 }
